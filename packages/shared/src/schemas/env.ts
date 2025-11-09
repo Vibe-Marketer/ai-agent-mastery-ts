@@ -13,6 +13,11 @@ export const envSchema = z.object({
   LLM_BASE_URL: z.string().url().optional(),
   LLM_API_KEY: z.string().min(1, 'LLM API key is required'),
   LLM_MODEL: z.string().min(1, 'LLM model is required'),
+  LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
+  LLM_MAX_TOKENS: z.coerce.number().int().positive().optional(),
+  LLM_TOP_P: z.coerce.number().min(0).max(1).default(1.0),
+  LLM_FREQUENCY_PENALTY: z.coerce.number().min(-2).max(2).default(0),
+  LLM_PRESENCE_PENALTY: z.coerce.number().min(-2).max(2).default(0),
   VISION_LLM_MODEL: z.string().min(1, 'Vision LLM model is required'),
 
   // Embedding Configuration
@@ -49,11 +54,13 @@ export const envSchema = z.object({
   LANGFUSE_HOST: z.string().url().optional(),
 
   // Application Configuration
+  PORT: z.coerce.number().int().positive().default(8000),
   API_PORT: z.coerce.number().int().positive().default(3001),
   API_HOST: z.string().default('0.0.0.0'),
   FRONTEND_PORT: z.coerce.number().int().positive().default(5173),
+  ALLOWED_ORIGINS: z.string().optional(),
   CORS_ORIGINS: z.string().transform((val) => val.split(',')).default('http://localhost:5173'),
-  SESSION_SECRET: z.string().min(32, 'Session secret should be at least 32 characters'),
+  SESSION_SECRET: z.string().min(32, 'Session secret should be at least 32 characters').optional(),
 
   // RAG Configuration
   RAG_WATCH_DIRECTORY: z.string().optional(),

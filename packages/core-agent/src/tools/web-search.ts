@@ -23,17 +23,16 @@ interface WebSearchResult {
  */
 async function searchWithBrave(query: string, apiKey: string): Promise<WebSearchResult> {
   try {
-    const response = await fetch('https://api.search.brave.com/res/v1/web/search', {
+    const url = new URL('https://api.search.brave.com/res/v1/web/search');
+    url.searchParams.set('q', query);
+    url.searchParams.set('count', '5');
+
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Accept-Encoding': 'gzip',
         'X-Subscription-Token': apiKey,
-      },
-      // @ts-ignore
-      params: {
-        q: query,
-        count: 5,
       },
     });
 
@@ -41,10 +40,15 @@ async function searchWithBrave(query: string, apiKey: string): Promise<WebSearch
       throw new ExternalServiceError('Brave', `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      web?: {
+        results?: Array<{ title: string; url: string; description: string }>;
+      };
+      summarizer?: { key?: string };
+    };
 
     // Extract and format results
-    const sources = data.web?.results?.slice(0, 5).map((result: any) => ({
+    const sources = data.web?.results?.slice(0, 5).map((result) => ({
       title: result.title,
       url: result.url,
       snippet: result.description,
@@ -52,7 +56,7 @@ async function searchWithBrave(query: string, apiKey: string): Promise<WebSearch
 
     // Use Brave's AI summary if available, otherwise create summary from results
     const summary = data.summarizer?.key ||
-      sources.map((s: any) => `${s.title}: ${s.snippet}`).join('\n\n');
+      sources.map((s) => `${s.title}: ${s.snippet}`).join('\n\n');
 
     return { summary, sources };
   } catch (error) {
@@ -77,9 +81,11 @@ async function searchWithSearXNG(query: string, baseUrl: string): Promise<WebSea
       throw new ExternalServiceError('SearXNG', `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      results?: Array<{ title: string; url: string; content?: string }>;
+    };
 
-    const sources = data.results?.slice(0, 5).map((result: any) => ({
+    const sources = data.results?.slice(0, 5).map((result) => ({
       title: result.title,
       url: result.url,
       snippet: result.content || result.title,
@@ -87,7 +93,7 @@ async function searchWithSearXNG(query: string, baseUrl: string): Promise<WebSea
 
     // Create summary from top results
     const summary = sources
-      .map((s: any, i: number) => `${i + 1}. ${s.title}\n${s.snippet}\nSource: ${s.url}`)
+      .map((s, i) => `${i + 1}. ${s.title}\n${s.snippet}\nSource: ${s.url}`)
       .join('\n\n');
 
     return { summary, sources };

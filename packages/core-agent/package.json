@@ -28,6 +28,7 @@
     "openai": "^4.77.0",
     "@anthropic-ai/sdk": "^0.32.1",
     "groq-sdk": "^0.8.0",
+    "vm2": "^3.9.19",
     "zod": "^3.22.4"
   },
   "devDependencies": {
