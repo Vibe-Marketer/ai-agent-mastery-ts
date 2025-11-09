@@ -1,0 +1,111 @@
+# AI Agent Mastery - TypeScript Edition
+# Docker Compose Configuration for Local Development
+
+services:
+  # Backend API Service (Hono)
+  backend-api:
+    build:
+      context: ./packages/backend-api
+      dockerfile: Dockerfile
+    container_name: ai-agent-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3001}:3001"
+    environment:
+      # Node Environment
+      - NODE_ENV=${NODE_ENV:-development}
+      # LLM Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL}
+      - VISION_LLM_MODEL=${VISION_LLM_MODEL}
+      # Embedding Configuration
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS}
+      # Database Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # Web Search
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL}
+      # Observability
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_HOST=${LANGFUSE_HOST}
+      # Application
+      - API_PORT=3001
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - SESSION_SECRET=${SESSION_SECRET}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - rag-pipeline
+
+  # RAG Pipeline Service
+  rag-pipeline:
+    build:
+      context: ./packages/rag-pipeline
+      dockerfile: Dockerfile
+    container_name: ai-agent-rag
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS}
+      # RAG Configuration
+      - RAG_WATCH_DIRECTORY=${RAG_WATCH_DIRECTORY:-/app/documents}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-200}
+    volumes:
+      # Mount local documents directory
+      - ./documents:/app/documents
+      # Mount Google OAuth credentials (if using)
+      - ./google-credentials:/app/credentials
+
+  # Frontend Service (React + Vite)
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+        VITE_API_ENDPOINT: ${VITE_API_ENDPOINT:-http://backend-api:3001}
+    container_name: ai-agent-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - backend-api
+
+volumes:
+  documents:
+  google-credentials:
+
+networks:
+  default:
+    name: ai-agent-network
