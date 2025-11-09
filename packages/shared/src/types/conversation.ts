@@ -2,7 +2,8 @@
  * Conversation and Chat Types
  */
 
-import type { Message, ToolCallResult, FileAttachment } from './agent.js';
+import type { Message } from './llm.js';
+import type { ToolCallResult, FileAttachment } from './agent.js';
 
 export interface ChatSession {
   id: string;

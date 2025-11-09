@@ -52,7 +52,7 @@ export interface ConversationMetadata {
   [key: string]: unknown;
 }
 
-export interface Message {
+export interface DBMessage {
   id: string;
   conversationId: string;
   role: 'system' | 'user' | 'assistant' | 'tool';

@@ -60,7 +60,7 @@ export interface DocumentRow {
   createdAt: Date;
 }
 
-export interface EmbeddingConfig {
+export interface RAGEmbeddingConfig {
   model: string;
   dimensions: number;
   provider: 'openai' | 'ollama';

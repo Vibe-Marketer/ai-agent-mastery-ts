@@ -2,7 +2,7 @@
  * Agent and Tool Types
  */
 
-import type { Message, ToolCall } from './llm.js';
+import type { Message } from './llm.js';
 
 export interface AgentConfig {
   name: string;
